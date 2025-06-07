@@ -1,9 +1,17 @@
 import React, { useEffect, useState } from "react";
 
-function useFetchData({ query, limit = 10 }) {
+function useFetchData({ query, limit = 15,page =1 }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [debouncedQuery, setDebouncedQuery] = useState('')
+
+  useEffect(()=>{
+    const timer = setTimeout(() => {
+      setDebouncedQuery(query || '')
+    }, 400);
+    return ()=>clearInterval(timer)
+  },[query])
 
   useEffect(() => {
     setLoading(true);
@@ -12,8 +20,9 @@ function useFetchData({ query, limit = 10 }) {
     const controller = new AbortController();
     const fetchData = async () => {
       try {
+        const skip = (page - 1) *limit
         const responce = await fetch(
-          `https://dummyjson.com/products/search?q=${query}&limit=${limit}`,
+          `https://dummyjson.com/products/search?q=${debouncedQuery}&limit=${limit}&skip=${skip}`,
           { signal: controller.signal }
         );
         const result = await responce.json();
@@ -29,7 +38,7 @@ function useFetchData({ query, limit = 10 }) {
     };
     fetchData();
     return () => controller.abort();
-  }, [limit, query]);
+  }, [debouncedQuery , limit, page]);
   return { data, loading, error };
 }
 
